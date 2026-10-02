@@ -6,6 +6,7 @@ Storage → BigQuery → Gemini enrichment → Streamlit app.
 ## Read first
 - `SPEC.md` (shared contracts), then the `SPEC.md` of the component you are working on.
 - Build only what the specs describe. If something is unclear or missing, ask; do not invent requirements.
+- When the prototype is decided to do something more simply than a production system for the case would, add a row to `docs/full_design.md`.
 
 ## Environment
 - Windows, PowerShell. Python 3.11+ in a virtual environment at `.venv`.

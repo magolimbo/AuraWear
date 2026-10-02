@@ -20,10 +20,10 @@ Aura Wear, a contemporary clothing brand, is building an Intelligent Customer Fe
 - G1. Load daily files for web ratings, support chats and orders from Cloud Storage into BigQuery raw tables (Data Ingestion).
 - G2. Build clean views that unify the two feedback sources and link them to orders (Data Modeling & Storage).
 - G3. Enrich every feedback item that has text with an LLM: category, sentiment, one-sentence summary; store the output in BigQuery (LLM Enrichment).
-- G4. A single-screen Streamlit workbench: search, filter and open feedback items; original text side by side with the AI summary and tags; correct a tag; re-run summaries for selected items (Interactive Visualization).
+- G4. A single-screen Streamlit workbench: search, filter and open feedback items; original text side by side with the AI summary and tags; correct a tag (Interactive Visualization).
 
 
-**Non-goals (do not build):** other feedback channels, aggregated dashboards, scheduling, deployment, monitoring, streaming, authentication, dbt, CI/CD, an LLM accuracy eval.
+**Non-goals (do not build):** other feedback channels, aggregated dashboards, scheduling, deployment, monitoring, streaming, authentication, dbt, CI/CD, an LLM accuracy eval, re-running the LLM from the workbench.
 
 **Assumptions and simplifications**
 
@@ -46,8 +46,7 @@ Aura Wear, a contemporary clothing brand, is building an Intelligent Customer Fe
 ![Architecture](docs/architecture.svg)
 
 Components communicate only through BigQuery tables and views, never by
-calling each other, with one exception: the app calls the enrichment
-function to re-run summaries.
+calling each other.
 
 **Components**
 
@@ -57,7 +56,7 @@ function to re-run summaries.
 | Loader | `ingestion/` | local files | GCS, `raw.*` | Python, Storage and BigQuery clients |
 | Clean layer | `sql/` | `raw.*`, `enrichment.*` | defines `clean.*` views and the empty `enrichment.*` tables | BigQuery SQL |
 | Enrichment | `enrichment/` | `clean.feedback`, `enrichment.feedback_enrichment` | `enrichment.feedback_enrichment` | Python, `google-genai`, Pydantic |
-| Workbench | `app/` | `clean.feedback_workbench` | `enrichment.feedback_corrections`; re-runs via the enrichment function | Streamlit |
+| Workbench | `app/` | `clean.feedback_workbench` | `enrichment.feedback_corrections` | Streamlit |
 
 **Run order** (all manual in the prototype)
 1. Once: create the bucket and datasets; apply the SQL (enrichment tables, then views).
@@ -123,8 +122,7 @@ Classify the cause, not the action: a return because of size is `fit_sizing`.
 - One enrichment per feedback item, keyed by `feedback_id`. A rating and a
   chat on the same order are enriched separately and never merged.
 - A feedback item is enriched only if it has text and no row with
-  `status = ok`. Error rows are retried. A re-run from the workbench forces a
-  new row.
+  `status = ok`. Error rows are retried.
 - Corrections never overwrite AI output.
 
 
