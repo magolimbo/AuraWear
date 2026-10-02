@@ -114,6 +114,17 @@ def make_feedback(
     return ratings, chats
 
 
+def add_dirty_rows(
+    ratings: list[dict[str, str]], chats: list[dict[str, str]], rng: random.Random
+) -> None:
+    """Make about 2% of feedback rows dirty, in place: out-of-range stars and duplicates."""
+    dirty = max(2, round(0.02 * (len(ratings) + len(chats))))
+    for rating in rng.sample(ratings, dirty // 2):
+        rating["stars"] = rng.choice(["0", "6"])
+    for row in rng.sample(ratings + chats, dirty - dirty // 2):
+        (ratings if "review_id" in row else chats).append(dict(row))
+
+
 def write_csv(path: Path, rows: list[dict[str, str]], columns: list[str]) -> None:
     """Write rows as CSV with a header, creating the folder if needed."""
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -138,6 +149,7 @@ def generate(days: int, orders_per_day: int, start_date: date, seed: int) -> Non
         day = start_date + timedelta(days=offset)
         orders = make_orders(day, orders_per_day, rng)
         ratings, chats = make_feedback(orders, rng)
+        add_dirty_rows(ratings, chats, rng)
         write_csv(OUT_DIR / "orders" / f"{day}.csv", orders, ORDER_COLUMNS)
         write_json_lines(OUT_DIR / "web_rating" / f"{day}.json", ratings)
         write_json_lines(OUT_DIR / "support_chat" / f"{day}.json", chats)
