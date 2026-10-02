@@ -21,10 +21,9 @@ Aura Wear, a contemporary clothing brand, is building an Intelligent Customer Fe
 - G2. Build clean views that unify the two feedback sources and link them to orders (Data Modeling & Storage).
 - G3. Enrich every feedback item that has text with an LLM: category, sentiment, one-sentence summary; store the output in BigQuery (LLM Enrichment).
 - G4. A single-screen Streamlit workbench: search, filter and open feedback items; original text side by side with the AI summary and tags; correct a tag; re-run summaries for selected items (Interactive Visualization).
-- G5. Measure LLM accuracy on a hand-checked labelled set (AI-Assisted Workflow: personal validation).
 
 
-**Non-goals (do not build):** other feedback channels, aggregated dashboards, scheduling, deployment, monitoring, streaming, authentication, dbt, CI/CD.
+**Non-goals (do not build):** other feedback channels, aggregated dashboards, scheduling, deployment, monitoring, streaming, authentication, dbt, CI/CD, an LLM accuracy eval.
 
 **Assumptions and simplifications**
 
@@ -35,7 +34,7 @@ Aura Wear, a contemporary clothing brand, is building an Intelligent Customer Fe
 | One order = one product and one customer | Product and customer resolved through the order |
 | An order has at most one rating and at most one chat | Simpler generator; no view depends on it |
 | Every feedback item references an order in the orders export | No orphan handling needed |
-| Feedback is in English only | No language detection; one eval set |
+| Feedback is in English only | No language detection; one prompt |
 | A chat transcript is a single text | No nested structures in BigQuery |
 | A single orders file with only the fields the workbench needs | No separate customers or products tables |
 | Every text gets a summary, not only long comments | One uniform LLM output for all items |
@@ -58,7 +57,6 @@ function to re-run summaries.
 | Loader | `ingestion/` | local files | GCS, `raw.*` | Python, Storage and BigQuery clients |
 | Clean layer | `sql/` | `raw.*`, `enrichment.*` | defines `clean.*` views and the empty `enrichment.*` tables | BigQuery SQL |
 | Enrichment | `enrichment/` | `clean.feedback`, `enrichment.feedback_enrichment` | `enrichment.feedback_enrichment` | Python, `google-genai`, Pydantic |
-| Eval | `eval/` | labels, `enrichment.feedback_enrichment` | report | Python |
 | Workbench | `app/` | `clean.feedback_workbench` | `enrichment.feedback_corrections`; re-runs via the enrichment function | Streamlit |
 
 **Run order** (all manual in the prototype)

@@ -18,7 +18,7 @@ Storage → BigQuery → Gemini enrichment → Streamlit app.
 - Run a component: `python -m <folder>.<module>` (e.g. `python -m data_gen.generate`)
 
 ## Project structure
-- One folder per component: `data_gen/`, `ingestion/`, `sql/`, `enrichment/`, `eval/`, `app/`.
+- One folder per component: `data_gen/`, `ingestion/`, `sql/`, `enrichment/`, `app/`.
 - Tests in `tests/<component>/`.
 - Project id, bucket, dataset names and region live only in `config.py`. Import them; never hard-code them elsewhere.
 
