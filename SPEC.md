@@ -9,7 +9,7 @@ This spec describes **the prototype to build**. Agents read this file plus the `
 
 Aura Wear, a contemporary clothing brand, is building an Intelligent Customer Feedback Workbench. It receives customer feedback daily from several channels. Product teams want to understand it alongside purchase data. This prototype covers two feedback channels, web store star ratings and support chat transcripts about returns or defects, plus a daily orders export.
 
-**Users.** Product managers business teams (internal, a handful of people).
+**Users.** Product managers, business teams (internal, a handful of people).
 
 **Central question.** "What are customers complaining about, on which products, and are these complaints driving returns?"
 
@@ -54,7 +54,7 @@ function to re-run summaries.
 
 | Component | Folder | Reads | Writes | Technology |
 |---|---|---|---|---|
-| Data generator | `data_gen/` | — | local files, manifest | Python |
+| Data generator | `data_gen/` | — | local files | Python |
 | Loader | `ingestion/` | local files | GCS, `raw.*` | Python, Storage and BigQuery clients |
 | Clean layer | `sql/` | `raw.*`, `enrichment.*` | defines `clean.*` views and the empty `enrichment.*` tables | BigQuery SQL |
 | Enrichment | `enrichment/` | `clean.feedback`, `enrichment.feedback_enrichment` | `enrichment.feedback_enrichment` | Python, `google-genai`, Pydantic |
