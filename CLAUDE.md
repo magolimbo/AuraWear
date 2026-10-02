@@ -30,7 +30,8 @@ Storage → BigQuery → Gemini enrichment → Streamlit app.
 - Code, comments and messages in English.
 
 ## Verification
-- Only `data_gen/` and `enrichment/` have `pytest` tests. They never call real GCP services or Gemini: mock them. Write them before the implementation.
+- Only `enrichment/` has `pytest` tests. They never call real GCP services or Gemini: mock them. Write them before the implementation.
+- Other components: run them and check the "Verified by" section of their `SPEC.md`.
 - A task is done only when its verification passes and `ruff check .` reports no errors. Report what you ran and the result in your final message.
 
 ## Git
@@ -39,4 +40,4 @@ Storage → BigQuery → Gemini enrichment → Streamlit app.
 ## Boundaries
 - **Always:** verify the task as described above before saying it is done; keep changes inside the component you were asked to work on.
 - **Ask first:** changing any table, column or contract in `SPEC.md`; adding a dependency; creating GCP resources.
-- **Never:** commit or push; delete GCP resources or data; commit secrets or `.env` files; edit `PERSONAL_LOG.md`.
+- **Never:** commit or push; delete GCP resources or data; commit secrets or `.env` files.

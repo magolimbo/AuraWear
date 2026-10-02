@@ -61,10 +61,10 @@ The orders file is always clean.
 
 ## 5. Verified by
 
-`pytest tests/data_gen` (files written to a temporary directory), default arguments:
+No pytest tests: the generator stands in for data that would already exist.
+Run `python -m data_gen.generate` with default arguments and check:
 
-- Files are named as in §1; CSV header and JSON keys match `SPEC.md` §4.1
-  (`comment` may be absent).
-- Two runs with the same arguments produce identical files.
-- Every rating and chat references an order of the same day.
-- Each day has at least one duplicate and one out-of-range row.
+- 9 files in `data/` (3 sources × 3 days); columns match `SPEC.md` §4.1.
+- A second run produces identical files.
+- Each day has a duplicate line and a rating with `stars` `0` or `6`.
+- A sample of texts reads naturally; `P03` complaints are about size, `P07` about defects.
