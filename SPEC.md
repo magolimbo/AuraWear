@@ -92,17 +92,28 @@ A rating's `product_id` matches its order's.
 
 | View | One row = | Columns |
 |---|---|---|
-| `feedback` | one feedback item | feedback_id, source_channel, order_id, product_id, customer_id, stars, text, created_at |
-| `feedback_workbench` | one feedback item | all of `feedback`, product_name, returned, category, sentiment, summary, ai_category, ai_sentiment, is_corrected, enrichment_status |
+| `feedback` | one feedback item | feedback_id, source_channel, order_id, product_id, product_name, customer_id, returned, stars, text, created_at |
+| `feedback_workbench` | one feedback item | all of `feedback`, category, sentiment, summary, ai_category, ai_sentiment, is_corrected, enrichment_status |
 
+Types: STRING, except `stars` INT64, `created_at` TIMESTAMP, `returned` and
+`is_corrected` BOOL.
+
+- `feedback_id` = `<source_channel>:<source id>` (`review_id` or `chat_id`),
+  e.g. `web_rating:RO20260901-0001`. Built only from source data, so it is
+  stable across queries.
 - `feedback` unions ratings and chats, deduplicated by `feedback_id`.
-  `source_channel` is `web_rating` or `support_chat`; a chat's `product_id`
-  and `customer_id` come from its order.
-- Ratings without a comment are kept, with empty `text`. Invalid rows are
-  excluded (rules in `sql/SPEC.md`).
-- In `feedback_workbench`, `category` and `sentiment` are the latest
-  correction if present, otherwise the latest AI value; `ai_category` and
-  `ai_sentiment` always hold the latest AI value.
+  `source_channel` is `web_rating` or `support_chat`; `text` is the rating's
+  comment or the chat's transcript; `created_at` is the rating's `created_at`
+  or the chat's `started_at`. `customer_id`, `product_name` and `returned` come
+  from the order, and so does a chat's `product_id`.
+- Ratings without a comment are kept, with `text` NULL; `stars` is NULL for
+  chats. Invalid rows are excluded (rules in `sql/SPEC.md`).
+- In `feedback_workbench`, AI values come from the latest `ok` enrichment row.
+  `category` and `sentiment` are the latest correction if present, otherwise
+  the AI value; `ai_category` and `ai_sentiment` always hold the AI value.
+- `is_corrected` is true if the item has at least one correction.
+- `enrichment_status`: `ok` (an `ok` row exists), `error` (only error rows),
+  `pending` (has text, no rows yet), `no_text` (nothing to enrich).
 
 ### 4.3 Enrichment (dataset `enrichment`, append-only tables)
 
@@ -110,6 +121,8 @@ A rating's `product_id` matches its order's.
 |---|---|---|
 | `feedback_enrichment` | one LLM run on one feedback item | feedback_id, category, sentiment, summary, status (ok / error), error_message, prompt_version, model, enriched_at |
 | `feedback_corrections` | one human correction | feedback_id, field (category / sentiment), corrected_value, corrected_by, corrected_at |
+
+Types: STRING, except `enriched_at` and `corrected_at` TIMESTAMP.
 
 **LLM output:** `category` from the list below; `sentiment` ∈ positive,
 neutral, negative; `summary` = one sentence.
