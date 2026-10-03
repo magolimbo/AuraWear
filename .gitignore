@@ -219,3 +219,5 @@ __marimo__/
 
 # Generated source files
 data/
+docs/full_design.md
+

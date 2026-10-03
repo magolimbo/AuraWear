@@ -93,7 +93,7 @@ A rating's `product_id` matches its order's.
 | View | One row = | Columns |
 |---|---|---|
 | `feedback` | one feedback item | feedback_id, source_channel, order_id, product_id, product_name, customer_id, returned, stars, text, created_at |
-| `feedback_workbench` | one feedback item | all of `feedback`, category, sentiment, summary, ai_category, ai_sentiment, is_corrected, enrichment_status |
+| `feedback_workbench` | one feedback item | all of `feedback`, category, sentiment, summary, ai_category, ai_sentiment, is_corrected |
 
 Types: STRING, except `stars` INT64, `created_at` TIMESTAMP, `returned` and
 `is_corrected` BOOL.
@@ -108,21 +108,20 @@ Types: STRING, except `stars` INT64, `created_at` TIMESTAMP, `returned` and
   from the order, and so does a chat's `product_id`.
 - Ratings without a comment are kept, with `text` NULL; `stars` is NULL for
   chats. Invalid rows are excluded (rules in `sql/SPEC.md`).
-- In `feedback_workbench`, AI values come from the latest `ok` enrichment row.
+- In `feedback_workbench`, `ai_category`, `ai_sentiment` and `summary` come
+  from the item's enrichment row; they are NULL if there is none.
   `category` and `sentiment` are the latest correction if present, otherwise
-  the AI value; `ai_category` and `ai_sentiment` always hold the AI value.
+  the AI value.
 - `is_corrected` is true if the item has at least one correction.
-- `enrichment_status`: `ok` (an `ok` row exists), `error` (only error rows),
-  `pending` (has text, no rows yet), `no_text` (nothing to enrich).
 
 ### 4.3 Enrichment (dataset `enrichment`, append-only tables)
 
 | Table | One row = | Columns |
 |---|---|---|
-| `feedback_enrichment` | one LLM run on one feedback item | feedback_id, category, sentiment, summary, status (ok / error), error_message, prompt_version, model, enriched_at |
+| `feedback_enrichment` | one successful LLM run on one feedback item | feedback_id, category, sentiment, summary |
 | `feedback_corrections` | one human correction | feedback_id, field (category / sentiment), corrected_value, corrected_by, corrected_at |
 
-Types: STRING, except `enriched_at` and `corrected_at` TIMESTAMP.
+Types: STRING, except `corrected_at` TIMESTAMP.
 
 **LLM output:** `category` from the list below; `sentiment` ∈ positive,
 neutral, negative; `summary` = one sentence.
@@ -134,8 +133,8 @@ Classify the cause, not the action: a return because of size is `fit_sizing`.
 **Rules**
 - One enrichment per feedback item, keyed by `feedback_id`. A rating and a
   chat on the same order are enriched separately and never merged.
-- A feedback item is enriched only if it has text and no row with
-  `status = ok`. Error rows are retried.
+- A feedback item is enriched only if it has text and no row yet. A failed
+  call is logged and writes nothing, so the item is retried on the next run.
 - Corrections never overwrite AI output.
 
 
