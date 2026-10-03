@@ -19,7 +19,7 @@ Aura Wear, a contemporary clothing brand, is building an Intelligent Customer Fe
 **Goals**
 - G1. Load daily files for web ratings, support chats and orders from Cloud Storage into BigQuery raw tables (Data Ingestion).
 - G2. Build clean views that unify the two feedback sources and link them to orders (Data Modeling & Storage).
-- G3. Enrich every feedback item that has text with an LLM: category, sentiment, one-sentence summary; store the output in BigQuery (LLM Enrichment).
+- G3. Enrich every feedback item that has text with an LLM: category and sentiment for all of them, plus a one-sentence summary for chat transcripts; store the output in BigQuery (LLM Enrichment).
 - G4. A single-screen Streamlit workbench: search, filter and open feedback items; original text side by side with the AI summary and tags; correct a tag (Interactive Visualization).
 
 
@@ -37,7 +37,7 @@ Aura Wear, a contemporary clothing brand, is building an Intelligent Customer Fe
 | Feedback is in English only | No language detection; one prompt |
 | A chat transcript is a single text | No nested structures in BigQuery |
 | A single orders file with only the fields the workbench needs | No separate customers or products tables |
-| Every text gets a summary, not only long comments | One uniform LLM output for all items |
+| Rating comments are short; chat transcripts are long | Summary only for chats; no length threshold |
 
 
 
@@ -126,7 +126,7 @@ Types: STRING, except `stars` INT64, `created_at` TIMESTAMP, `returned` and
 Types: STRING, except `corrected_at` TIMESTAMP.
 
 **LLM output:** `category` from the list below; `sentiment` ∈ positive,
-neutral, negative; `summary` = one sentence.
+neutral, negative; `summary` = one sentence for chats, NULL for ratings.
 
 **Categories:** `fit_sizing` (size or fit), `product_quality` (defects,
 materials), `returns_refunds` (the return or refund process itself), `other`.
