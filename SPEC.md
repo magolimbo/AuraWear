@@ -119,7 +119,7 @@ Types: STRING, except `stars` INT64, `created_at` TIMESTAMP, `returned` and
 | Table | One row = | Columns |
 |---|---|---|
 | `feedback_enrichment` | one successful LLM run on one feedback item | feedback_id, category, sentiment, summary |
-| `feedback_corrections` | one human correction | feedback_id, field (category / sentiment), corrected_value, corrected_by, corrected_at |
+| `feedback_corrections` | one human correction | feedback_id, field (category / sentiment), corrected_value, corrected_at |
 
 Types: STRING, except `corrected_at` TIMESTAMP.
 
