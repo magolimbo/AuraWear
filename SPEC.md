@@ -59,9 +59,11 @@ calling each other.
 | Workbench | `app/` | `clean.feedback_workbench` | `enrichment.feedback_corrections` | Streamlit |
 
 **Run order** (all manual in the prototype)
-1. Once: create the bucket and datasets; apply the SQL (enrichment tables, then views).
-2. Per day: generate → load → enrich.
-3. Any time: run the workbench.
+1. Once: create the bucket and datasets.
+2. First day: generate → load → apply the SQL → enrich. Views need the raw
+   tables to exist; the SQL is re-applied only when it changes.
+3. Every following day: generate → load → enrich.
+4. Any time: run the workbench.
 
 **Runtime.** Scripts and the app run locally; storage, transformations and
 the LLM run on GCP. Authentication via Application Default Credentials;
