@@ -14,13 +14,11 @@ Storage → BigQuery → Gemini enrichment → Streamlit app.
 - GCP auth: Application Default Credentials (already configured). Never create or use key files.
 
 ## Commands
-- Tests: `pytest`
 - Lint: `ruff check .`
 - Run a component: `python -m <folder>.<module>` (e.g. `python -m data_gen.generate`)
 
 ## Project structure
 - One folder per component: `data_gen/`, `ingestion/`, `sql/`, `enrichment/`, `app/`.
-- Tests in `tests/<component>/`.
 - Project id, bucket, dataset names and region live only in `config.py`. Import them; never hard-code them elsewhere.
 
 ## Code rules
@@ -31,8 +29,7 @@ Storage → BigQuery → Gemini enrichment → Streamlit app.
 - Code, comments and messages in English.
 
 ## Verification
-- Only `enrichment/` has `pytest` tests. They never call real GCP services or Gemini: mock them. Write them before the implementation.
-- Other components: run them and check the "Verified by" section of their `SPEC.md`.
+- No automated tests: run the component and check the "Verified by" section of its `SPEC.md`.
 - A task is done only when its verification passes and `ruff check .` reports no errors. Report what you ran and the result in your final message.
 
 ## Git
