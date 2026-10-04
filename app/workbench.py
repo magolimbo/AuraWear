@@ -69,12 +69,13 @@ def show_original_text(item: pd.Series) -> None:
 
 
 def show_tag(name: str, value: str, ai_value: str, color: str) -> None:
-    """Show one tag as a badge; if a person changed it, also show the AI value."""
-    st.markdown(f"**{name}**")
-    if value == ai_value:
-        st.badge(LABELS[value], color=color)
-    else:
-        st.markdown(f":{color}-badge[{LABELS[value]}] :gray[:material/edit: Corrected]")
+    """Show one tag as a badge next to its name; if a person changed it, also the AI value."""
+    corrected = value != ai_value
+    line = f"**{name}** :{color}-badge[{LABELS[value]}]"
+    if corrected:
+        line += " :gray[:material/edit: Corrected]"
+    st.markdown(line)
+    if corrected:
         st.caption(f"AI: {LABELS[ai_value]}")
 
 
@@ -86,7 +87,8 @@ def show_ai_analysis(item: pd.Series) -> None:
         else:
             st.caption("Not analyzed yet.")
         return
-    show_tag("Category", item["category"], item["ai_category"], "primary")
+    # Blue for the category: green, gray and red mean sentiment only.
+    show_tag("Category", item["category"], item["ai_category"], "blue")
     sentiment_color = SENTIMENT_COLORS[item["sentiment"]]
     show_tag("Sentiment", item["sentiment"], item["ai_sentiment"], sentiment_color)
     if pd.notna(item["summary"]):
@@ -214,19 +216,20 @@ if not event.selection.rows:
 item = shown.iloc[event.selection.rows[0]]
 st.divider()
 returned_text = "Returned" if item["returned"] else "Not returned"
-st.markdown(
-    f"**{LABELS[item['source_channel']]}** · {item['product_name']} · "
-    f"{item['created_at']:%Y-%m-%d %H:%M} UTC · Order {item['order_id']} · "
-    f"Customer {item['customer_id']} · {returned_text}"
+st.subheader(item["product_name"], anchor=False)
+st.caption(
+    f"{LABELS[item['source_channel']]} · {item['created_at']:%Y-%m-%d %H:%M} UTC · "
+    f"Order {item['order_id']} · Customer {item['customer_id']} · {returned_text}  \n"
+    f"{item['feedback_id']}"
 )
-st.caption(item["feedback_id"])
 
+# Two bordered cards side by side; the correction form sits in the AI card.
 left, right = st.columns(2, gap="large")
-with left:
-    st.subheader("Original text", anchor=False)
+with left.container(border=True):
+    st.markdown("**Original text**")
     show_original_text(item)
-with right:
-    st.subheader("AI analysis", anchor=False)
+with right.container(border=True):
+    st.markdown("**AI analysis**")
     show_ai_analysis(item)
     if pd.notna(item["ai_category"]):  # only AI output can be corrected
         st.divider()

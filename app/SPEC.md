@@ -86,14 +86,15 @@ passes all of them.
 Shown below the table when a row is selected. Otherwise the area shows:
 "Select a feedback item in the table to see its detail."
 
-**Header**, one line: channel · product · date and time · order · customer ·
-Returned / Not returned. Below it, in small text, the `feedback_id`.
+**Header:** the product name as title. Below it, in small text: channel ·
+date and time · order · customer · Returned / Not returned, then the
+`feedback_id`.
 
-**Two columns of equal width:**
+**Two bordered cards of equal width:**
 
 | Left: Original text | Right: AI analysis |
 |---|---|
-| **Chat:** the transcript as chat messages, one per line, with one icon for `Customer:` and one for `Agent:` (prefix removed) | Category and sentiment as badges: sentiment green / gray / red, always with the word; category in the accent color |
+| **Chat:** the transcript as chat messages, one per line, with one icon for `Customer:` and one for `Agent:` (prefix removed) | Category and sentiment as badges next to their names: sentiment green / gray / red, always with the word; category in blue, a color the sentiment does not use |
 | **Rating with comment:** stars (★★☆☆☆), then the comment | **Chats only:** the summary |
 | **Rating without comment:** stars, then "No written comment" | Below: the correction form (§4) |
 
