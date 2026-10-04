@@ -1,0 +1,11 @@
+# Workbench theme (app/SPEC.md section 1).
+[theme]
+base = "light"
+# Sage accent: buttons and selected row; dark enough for white text (contrast 5.6:1).
+primaryColor = "#4F6F55"
+# Warm off-white page, slightly darker sidebar and inputs.
+backgroundColor = "#FAF8F5"
+secondaryBackgroundColor = "#F0ECE6"
+# Charcoal text.
+textColor = "#2B2B2B"
+font = "sans serif"
