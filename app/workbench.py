@@ -4,9 +4,22 @@ import pandas as pd
 import streamlit as st
 from google.cloud import bigquery
 
-from config import CLEAN_DATASET, LOCATION, PROJECT_ID
+from config import CLEAN_DATASET, ENRICHMENT_DATASET, LOCATION, PROJECT_ID
 
 WORKBENCH_VIEW = f"{PROJECT_ID}.{CLEAN_DATASET}.feedback_workbench"
+CORRECTIONS_TABLE = f"{PROJECT_ID}.{ENRICHMENT_DATASET}.feedback_corrections"
+
+# One statement for both tags, so either both rows are saved or neither is.
+# An unchanged tag is passed as NULL and skipped.
+INSERT_CORRECTIONS = f"""
+    INSERT INTO `{CORRECTIONS_TABLE}` (feedback_id, field, corrected_value, corrected_at)
+    SELECT @feedback_id, field, value, CURRENT_TIMESTAMP()
+    FROM UNNEST([
+      STRUCT('category' AS field, @category AS value),
+      STRUCT('sentiment', @sentiment)
+    ])
+    WHERE value IS NOT NULL
+"""
 
 # Plain labels shown in the interface; stored values never change (app/SPEC.md section 1).
 LABELS = {
@@ -22,6 +35,7 @@ LABELS = {
 }
 CATEGORIES = ["fit_sizing", "product_quality", "returns_refunds", "other"]
 SENTIMENTS = ["positive", "neutral", "negative"]
+SENTIMENT_COLORS = {"positive": "green", "neutral": "gray", "negative": "red"}
 
 
 @st.cache_data(show_spinner="Loading feedback...")
@@ -35,6 +49,95 @@ def stars_text(stars: float) -> str:
     """Show a 1-5 rating as filled and empty stars, e.g. 2 -> ★★☆☆☆."""
     count = int(stars)  # pandas passes 2.0, not 2, when the column has empty values
     return "★" * count + "☆" * (5 - count)
+
+
+def show_original_text(item: pd.Series) -> None:
+    """Left column of the detail: a chat as messages, a rating as stars and comment."""
+    if item["source_channel"] == "support_chat":
+        for line in item["text"].splitlines():
+            speaker, _, message = line.partition(": ")  # "Customer: ..." or "Agent: ..."
+            avatar = ":material/person:" if speaker == "Customer" else ":material/support_agent:"
+            with st.chat_message(speaker, avatar=avatar):
+                st.caption(speaker)
+                st.text(message)
+    else:
+        st.subheader(stars_text(item["stars"]), anchor=False)
+        if pd.isna(item["text"]):
+            st.caption("No written comment")
+        else:
+            st.text(item["text"])
+
+
+def show_tag(name: str, value: str, ai_value: str, color: str) -> None:
+    """Show one tag as a badge; if a person changed it, also show the AI value."""
+    st.markdown(f"**{name}**")
+    if value == ai_value:
+        st.badge(LABELS[value], color=color)
+    else:
+        st.markdown(f":{color}-badge[{LABELS[value]}] :gray[:material/edit: Corrected]")
+        st.caption(f"AI: {LABELS[ai_value]}")
+
+
+def show_ai_analysis(item: pd.Series) -> None:
+    """Right column of the detail: tags and summary, or why there are none."""
+    if pd.isna(item["ai_category"]):
+        if pd.isna(item["text"]):
+            st.caption("Not analyzed: no text to send to the AI.")
+        else:
+            st.caption("Not analyzed yet.")
+        return
+    show_tag("Category", item["category"], item["ai_category"], "primary")
+    sentiment_color = SENTIMENT_COLORS[item["sentiment"]]
+    show_tag("Sentiment", item["sentiment"], item["ai_sentiment"], sentiment_color)
+    if pd.notna(item["summary"]):
+        st.markdown("**Summary**")
+        st.text(item["summary"])
+
+
+def save_correction(feedback_id: str, category: str | None, sentiment: str | None) -> None:
+    """Append the changed tags (None = unchanged) to feedback_corrections, then reload."""
+    client = bigquery.Client(project=PROJECT_ID, location=LOCATION)
+    job_config = bigquery.QueryJobConfig(
+        query_parameters=[
+            bigquery.ScalarQueryParameter("feedback_id", "STRING", feedback_id),
+            bigquery.ScalarQueryParameter("category", "STRING", category),
+            bigquery.ScalarQueryParameter("sentiment", "STRING", sentiment),
+        ]
+    )
+    client.query(INSERT_CORRECTIONS, job_config=job_config).result()
+    load_feedback.clear()  # reached only if the insert succeeded
+    st.toast("Correction saved", icon=":material/check:")
+
+
+def show_correction_form(item: pd.Series) -> None:
+    """Two selects starting from the current tags; Save is enabled only after a change."""
+    st.markdown("**Correct tags**")
+    # Keys include the item id, so each item's selects start from its own tags.
+    category_col, sentiment_col = st.columns(2)
+    category = category_col.selectbox(
+        "Category",
+        CATEGORIES,
+        index=CATEGORIES.index(item["category"]),
+        format_func=LABELS.get,
+        key=f"category:{item['feedback_id']}",
+    )
+    sentiment = sentiment_col.selectbox(
+        "Sentiment",
+        SENTIMENTS,
+        index=SENTIMENTS.index(item["sentiment"]),
+        format_func=LABELS.get,
+        key=f"sentiment:{item['feedback_id']}",
+    )
+    new_category = category if category != item["category"] else None
+    new_sentiment = sentiment if sentiment != item["sentiment"] else None
+    # The save runs as a callback, before the next run, so that run already reads fresh data.
+    st.button(
+        "Save correction",
+        type="primary",
+        disabled=new_category is None and new_sentiment is None,
+        on_click=save_correction,
+        args=(item["feedback_id"], new_category, new_sentiment),
+    )
 
 
 st.set_page_config(page_title="Feedback Workbench", layout="wide")
@@ -105,3 +208,26 @@ event = st.dataframe(
 
 if not event.selection.rows:
     st.info("Select a feedback item in the table to see its detail.", icon=":material/touch_app:")
+    st.stop()
+
+# Detail of the selected item (app/SPEC.md section 3).
+item = shown.iloc[event.selection.rows[0]]
+st.divider()
+returned_text = "Returned" if item["returned"] else "Not returned"
+st.markdown(
+    f"**{LABELS[item['source_channel']]}** · {item['product_name']} · "
+    f"{item['created_at']:%Y-%m-%d %H:%M} UTC · Order {item['order_id']} · "
+    f"Customer {item['customer_id']} · {returned_text}"
+)
+st.caption(item["feedback_id"])
+
+left, right = st.columns(2, gap="large")
+with left:
+    st.subheader("Original text", anchor=False)
+    show_original_text(item)
+with right:
+    st.subheader("AI analysis", anchor=False)
+    show_ai_analysis(item)
+    if pd.notna(item["ai_category"]):  # only AI output can be corrected
+        st.divider()
+        show_correction_form(item)
