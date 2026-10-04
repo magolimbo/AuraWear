@@ -1,7 +1,7 @@
-db-dtypes
-google-cloud-bigquery
-google-cloud-storage
-google-genai
-pydantic
-ruff
-streamlit
+db-dtypes==1.7.2
+google-cloud-bigquery==3.46.1
+google-cloud-storage==3.16.0
+google-genai==2.28.0
+pydantic==2.13.5
+ruff==0.16.10
+streamlit==1.65.0
